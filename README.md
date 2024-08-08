@@ -1,13 +1,16 @@
 # deno-gtts
 
+> [!NOTE]  
+> This is a fork of https://github.com/dunosaurs/gtts with new default method
+
 A simple text-to-speech library using the google translate api. It is designed
 to be used either as a deno library or as a cli tool.
 
 ## Usage
 
 ```typescript
-import { save } from "https://deno.land/x/gtts/mod.ts";
-
+import gtts, { save } from "https://deno.land/x/gtts/mod.ts";
+await gtts("Hello world");
 await save("./demo.wav", "This sentence is being read by a machine");
 ```
 

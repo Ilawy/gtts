@@ -1,5 +1,5 @@
+import type { LANGUAGES } from "./src/languages.ts";
 import { writeAll } from "./deps.ts";
-import { LANGUAGES } from "./src/languages.ts";
 
 const GOOGLE_TTS_URL = "http://translate.google.com/translate_tts";
 const headers = {
@@ -8,15 +8,15 @@ const headers = {
 };
 
 function tokenize(text: string) {
-  return text.split(/¡|!|\(|\)|\[|\]|\¿|\?|\.|\,|\;|\:|\—|\«|\»|\n/).filter(
-    (p) => p,
-  );
+  return text
+    .split(/¡|!|\(|\)|\[|\]|\¿|\?|\.|\,|\;|\:|\—|\«|\»|\n/)
+    .filter((p) => p);
 }
 
 /**
  * The options for TTS
  */
-export interface SaveOptions {
+export interface Options {
   language: keyof typeof LANGUAGES;
 }
 
@@ -24,27 +24,56 @@ export interface SaveOptions {
  * Convert text to speech and save to a .wav file
  * @example
  * ```typescript
- * await save("./demo.wav", "hello text to speech", { language: "en-us" });
+ * await gtts("hello text to speech", { language: "en-us" });
  * ```
  */
-export async function save(
-  path: string,
+export default async function gtts(
   text: string,
-  options?: Partial<SaveOptions>,
-) {
-  const config: SaveOptions = {
+  options?: Partial<Options>
+): Promise<Uint8Array> {
+  const { resolve, reject, promise } = Promise.withResolvers<Uint8Array>();
+  const config: Options = {
     ...{
       language: "en-us",
     },
     ...options,
   };
   const textParts = tokenize(text);
+  const chunks: Uint8Array[] = [];
 
+  for await (const [i, part] of Object.entries(textParts)) {
+    const encodedText = encodeURIComponent(part);
+    const args = `?ie=UTF-8&tl=${config.language}&q=${encodedText}&total=${textParts.length}&idx=${i}&client=tw-ob&textlen=${encodedText.length}`;
+    const url = GOOGLE_TTS_URL + args;
+    try {
+      const req = await fetch(url, {
+        headers,
+      });
+      const buffer = await req.arrayBuffer();
+      const data = new Uint8Array(buffer);
+      chunks.push(data);
+    } catch (e) {
+      reject(e);
+    }
+  }
+  const buffer = new Blob(chunks, { type: "audio/wav" });
+  resolve(new Uint8Array(await buffer.arrayBuffer()));
+
+  return promise;
+}
+
+export async function save(
+  path: string,
+  text: string,
+  options?: Partial<Options>
+): Promise<void> {
   try {
     await Deno.remove(path);
   } catch {
     // swallow error
   }
+
+  const data = await gtts(text, options);
 
   const file = await Deno.open(path, {
     create: true,
@@ -52,20 +81,7 @@ export async function save(
     write: true,
   });
 
-  for (const [i, part] of Object.entries(textParts)) {
-    const encodedText = encodeURIComponent(part);
-    const args =
-      `?ie=UTF-8&tl=${config.language}&q=${encodedText}&total=${textParts.length}&idx=${i}&client=tw-ob&textlen=${encodedText.length}`;
-    const url = GOOGLE_TTS_URL + args;
-
-    const req = await fetch(url, {
-      headers,
-    });
-    const buffer = await req.arrayBuffer();
-    const data = new Uint8Array(buffer);
-
-    await writeAll(file, data);
-  }
+  await writeAll(file, data);
 
   file.close();
 }
