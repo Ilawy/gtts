@@ -1,7 +1,7 @@
 import gtts from "./mod.ts";
 import { which } from "@david/which";
 
-Deno.test("generate and play", async (t) => {
+Deno.test("generate and play", async () => {
   const result = await gtts("If you can hear me, this test passed.");
   await Deno.writeFile("test.wav", result);
   if (await which("ffplay")) {
