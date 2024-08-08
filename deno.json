@@ -1,0 +1,6 @@
+{
+    "name": "@ilawy/gtts",
+    "exports": {
+        ".": "./mod.ts"
+    }
+}
