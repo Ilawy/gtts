@@ -9,7 +9,7 @@ to be used either as a deno library or as a cli tool.
 ## Usage
 
 ```typescript
-import gtts, { save } from "https://deno.land/x/gtts/mod.ts";
+import gtts, { save } from "jsr:@ilawy/gtts";
 await gtts("Hello world");
 await save("./demo.wav", "This sentence is being read by a machine");
 ```
@@ -17,7 +17,7 @@ await save("./demo.wav", "This sentence is being read by a machine");
 OR
 
 ```bash
-deno install --allow-write --allow-net -n gtts https://deno.land/x/gtts/cli.ts
+deno install --allow-write --allow-net -n gtts jsr:@ilawy/gtts
 gtts "some text to speak"
 gtts "some text to speak to a destination" --path="./test.wav"
 gtts "text but in a french accent" --lang=fr
